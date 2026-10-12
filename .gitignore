@@ -42,6 +42,8 @@ id_rsa*
 .env.*
 credentials
 *.credentials
+*.csv
+*accessKeys*
 
 # OS files
 .DS_Store
