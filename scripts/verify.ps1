@@ -15,12 +15,29 @@ if (-not (Test-Path $TerraformDir)) {
     exit 1
 }
 
+# Locate terraform executable
+$TerraformCmd = "terraform"
+if (-not (Get-Command terraform -ErrorAction SilentlyContinue)) {
+    $WingetTf = Get-ChildItem -Path "$env:LOCALAPPDATA\Microsoft\WinGet" -Filter "terraform.exe" -Recurse -ErrorAction SilentlyContinue | Select-Object -First 1 -ExpandProperty FullName
+    if ($WingetTf -and (Test-Path $WingetTf)) {
+        $TerraformCmd = $WingetTf
+    }
+}
+
+# Locate aws executable
+$AwsCmd = "aws"
+if (-not (Get-Command aws -ErrorAction SilentlyContinue)) {
+    if (Test-Path "C:\Program Files\Amazon\AWSCLIV2\aws.exe") {
+        $AwsCmd = "C:\Program Files\Amazon\AWSCLIV2\aws.exe"
+    }
+}
+
 Push-Location $TerraformDir
 
 try {
     Write-Host "`n[1/4] Reading Terraform outputs..." -ForegroundColor Yellow
 
-    $OutputsJson = terraform output -json 2>$null
+    $OutputsJson = & $TerraformCmd output -json 2>$null
     if (-not $OutputsJson) {
         Write-Host "[ERROR] No Terraform state found or 'terraform output' failed." -ForegroundColor Red
         Write-Host "Run 'terraform apply' first inside the terraform/ directory."
@@ -77,11 +94,14 @@ try {
     }
 
     Write-Host "`n[3/4] Checking AWS CLI State (optional)..." -ForegroundColor Yellow
-    if (Get-Command aws -ErrorAction SilentlyContinue) {
+    if ($AwsCmd -and (Test-Path $AwsCmd)) {
+        & $AwsCmd ec2 describe-instances --instance-ids $InstanceId --query "Reservations[*].Instances[*].[InstanceId,State.Name,InstanceType]" --output table
+    }
+    elseif (Get-Command "aws" -ErrorAction SilentlyContinue) {
         aws ec2 describe-instances --instance-ids $InstanceId --query "Reservations[*].Instances[*].[InstanceId,State.Name,InstanceType]" --output table
     }
     else {
-        Write-Host "AWS CLI not detected in PATH. Skipping API query."
+        Write-Host "AWS CLI not detected. Skipping API query."
     }
 
     Write-Host "`n[4/4] Remote SSH Access Information:" -ForegroundColor Yellow
