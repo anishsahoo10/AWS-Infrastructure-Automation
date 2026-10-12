@@ -1,0 +1,79 @@
+name: "Terraform CI"
+
+on:
+  push:
+    branches:
+      - main
+      - master
+    paths:
+      - "terraform/**"
+      - ".github/workflows/**"
+  pull_request:
+    branches:
+      - main
+      - master
+    paths:
+      - "terraform/**"
+      - ".github/workflows/**"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pull-requests: write
+
+jobs:
+  terraform-ci:
+    name: "Validate and Plan"
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: terraform
+
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: 1.8.5
+
+      - name: Check Terraform Formatting
+        id: fmt
+        run: terraform fmt -check -diff
+
+      - name: Initialize Terraform (Syntax Validation Mode)
+        id: init
+        run: terraform init -backend=false
+
+      - name: Validate Terraform Configuration
+        id: validate
+        run: terraform validate -no-color
+
+      # If AWS Credentials secrets are provided in the repo, run a real Terraform Plan
+      - name: Check for AWS Credentials
+        id: check_creds
+        run: |
+          if [ -n "${{ secrets.AWS_ACCESS_KEY_ID }}" ] && [ -n "${{ secrets.AWS_SECRET_ACCESS_KEY }}" ]; then
+            echo "has_creds=true" >> $GITHUB_OUTPUT
+          else
+            echo "has_creds=false" >> $GITHUB_OUTPUT
+            echo "::notice::AWS credentials not found in repository secrets. Skipping live 'terraform plan'. Formatting and validation checks passed successfully."
+          fi
+
+      - name: Configure AWS Credentials
+        if: steps.check_creds.outputs.has_creds == 'true'
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ secrets.AWS_REGION || 'us-east-1' }}
+
+      - name: Initialize Terraform (Full Backend)
+        if: steps.check_creds.outputs.has_creds == 'true'
+        run: terraform init
+
+      - name: Terraform Plan
+        if: steps.check_creds.outputs.has_creds == 'true'
+        id: plan
+        run: terraform plan -no-color

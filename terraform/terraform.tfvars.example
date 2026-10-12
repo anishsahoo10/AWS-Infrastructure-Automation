@@ -1,0 +1,30 @@
+# ---------------------------------------------------------------------------------------------------------------------
+# SAMPLE CONFIGURATION FILE: terraform.tfvars.example
+# Copy this file to terraform.tfvars and customize with your own settings:
+#   cp terraform.tfvars.example terraform.tfvars
+# ---------------------------------------------------------------------------------------------------------------------
+
+# AWS Region to deploy resources into
+aws_region = "us-east-1"
+
+# Project identification tag prefix
+project_name = "aws-infra-automation"
+
+# Environment tier
+environment = "dev"
+
+# Network CIDRs
+vpc_cidr           = "10.0.0.0/16"
+public_subnet_cidr = "10.0.1.0/24"
+
+# Compute instance sizing (t2.micro and t3.micro are Free Tier eligible)
+instance_type = "t2.micro"
+
+# Security: Best practice is to replace this with your public IP address (e.g., ["203.0.113.50/32"])
+allowed_ssh_cidr = ["0.0.0.0/0"]
+
+# Optional: Provide your SSH public key string (e.g. from ~/.ssh/id_rsa.pub) to generate an AWS Key Pair
+# ssh_public_key = "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAI... user@machine"
+
+# Or specify the name of an existing Key Pair in your AWS account:
+# existing_key_pair_name = "my-aws-key"
