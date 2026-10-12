@@ -17,8 +17,8 @@ environment = "dev"
 vpc_cidr           = "10.0.0.0/16"
 public_subnet_cidr = "10.0.1.0/24"
 
-# Compute instance sizing (t2.micro and t3.micro are Free Tier eligible)
-instance_type = "t2.micro"
+# Compute instance sizing (t3.micro is AWS Free Tier eligible)
+instance_type = "t3.micro"
 
 # Security: Best practice is to replace this with your public IP address (e.g., ["203.0.113.50/32"])
 allowed_ssh_cidr = ["0.0.0.0/0"]

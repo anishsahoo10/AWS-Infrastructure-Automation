@@ -29,9 +29,9 @@ variable "public_subnet_cidr" {
 }
 
 variable "instance_type" {
-  description = "EC2 instance type (t2.micro and t3.micro are AWS Free Tier eligible)"
+  description = "EC2 instance type (t3.micro is the standard AWS Free Tier eligible type)"
   type        = string
-  default     = "t2.micro"
+  default     = "t3.micro"
 }
 
 variable "allowed_ssh_cidr" {
